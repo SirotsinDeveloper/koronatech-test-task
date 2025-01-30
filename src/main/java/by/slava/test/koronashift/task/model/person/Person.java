@@ -2,13 +2,11 @@ package by.slava.test.koronashift.task.model.person;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
 @AllArgsConstructor
-@NoArgsConstructor
 public abstract class Person {
     protected String position;
     protected int id;
