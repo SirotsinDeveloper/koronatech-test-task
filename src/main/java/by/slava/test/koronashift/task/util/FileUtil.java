@@ -17,4 +17,15 @@ public class FileUtil {
         }
         return list;
     }
+
+    public static void writeFile(String filePath, List<String> list) {
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(filePath))) {
+            for (String line : list) {
+                bw.write(line);
+                bw.newLine();
+            }
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+        }
+    }
 }
