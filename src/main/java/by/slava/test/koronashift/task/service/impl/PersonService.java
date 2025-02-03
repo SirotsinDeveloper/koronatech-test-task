@@ -5,7 +5,9 @@ import by.slava.test.koronashift.task.model.Manager;
 import by.slava.test.koronashift.task.service.PersonServiceInterface;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class PersonService implements PersonServiceInterface {
     private List<Employee> employees = new ArrayList<>();
@@ -40,7 +42,25 @@ public class PersonService implements PersonServiceInterface {
 
     @Override
     public void sortEmployees(String sortField, String sortOrder) {
+        Comparator<Employee> comparator;
 
+        if ("name".equalsIgnoreCase(sortField)) {
+            comparator = Comparator.comparing(Employee::getName);
+        } else if ("salary".equalsIgnoreCase(sortField)) {
+            comparator = Comparator.comparing(Employee::getSalary);
+        } else {
+            throw new IllegalArgumentException("Invalid sort field: " + sortField);
+        }
+
+        if ("desc".equalsIgnoreCase(sortOrder)) {
+            employees.sort(comparator.reversed());
+        } else if (!"asc".equalsIgnoreCase(sortOrder)) {
+            throw new IllegalArgumentException("Invalid sort order: " + sortOrder);
+        }
+
+        employees = employees.stream()
+                .sorted(comparator.reversed())
+                .collect(Collectors.toList());
     }
 
     @Override
