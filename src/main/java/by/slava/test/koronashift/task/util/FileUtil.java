@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class FileUtil {
-    public List<String> readFile(String filePath) {
+    public static List<String> readFile(String filePath) {
         List<String> list = new ArrayList<>();
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
             String line;
