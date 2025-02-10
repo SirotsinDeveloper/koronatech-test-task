@@ -5,12 +5,15 @@ import by.slava.test.koronashift.task.model.Manager;
 import by.slava.test.koronashift.task.service.PersonServiceInterface;
 import by.slava.test.koronashift.task.util.FileUtil;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.TreeMap;
 
 public class PersonService implements PersonServiceInterface {
-    private List<Employee> employees = new ArrayList<>();
     private final List<Manager> managers = new ArrayList<>();
+    private final List<Employee> employees = new ArrayList<>();
     private final List<String> invalidData = new ArrayList<>();
 
     @Override
@@ -19,18 +22,21 @@ public class PersonService implements PersonServiceInterface {
             String[] parts = line.split(",");
             if (parts.length == 5) {
                 try {
-                    if ("manager".equalsIgnoreCase(parts[0])) {
-                        Manager manager = new Manager(parts[0], Integer.parseInt(parts[1]), parts[2],
-                                Double.parseDouble(parts[3]), parts[4]);
+                    if ("Manager".equalsIgnoreCase(parts[0])) {
+                        Manager manager = new Manager(parts[0], Integer.parseInt(parts[1].trim()), parts[2].trim(),
+                                Double.parseDouble(parts[3].trim()), parts[4].trim());
                         managers.add(manager);
-                    } else if ("employee".equalsIgnoreCase(parts[0])) {
-                        Employee employee = new Employee(parts[0], Integer.parseInt(parts[1]), parts[2],
-                                Double.parseDouble(parts[3]), Integer.parseInt(parts[4]));
-                        if (employee.getSalary() > 0) {
+                    } else if ("Employee".equalsIgnoreCase(parts[0])) {
+                        double salary = parts[3].trim().isEmpty() ? 0.0 : Double.parseDouble(parts[3].trim());
+                        Employee employee = new Employee(parts[0], Integer.parseInt(parts[1].trim()), parts[2].trim(),
+                                salary, Integer.parseInt(parts[4].trim()));
+                        if (salary >= 0) {
                             employees.add(employee);
                         } else {
                             invalidData.add(line);
                         }
+                    } else {
+                        invalidData.add(line);
                     }
                 } catch (NumberFormatException e) {
                     invalidData.add(line);
@@ -41,32 +47,49 @@ public class PersonService implements PersonServiceInterface {
         }
     }
 
+    private void sortEmployeesManually(List<Employee> employees, String sortField, String sortOrder) {
+        for (int i = 0; i < employees.size() - 1; i++) {
+            for (int j = 0; j < employees.size() - i - 1; j++) {
+                boolean shouldSwap = false;
+
+                if ("name".equalsIgnoreCase(sortField)) {
+                    if ("asc".equalsIgnoreCase(sortOrder) && employees.get(j)
+                            .getName()
+                            .compareTo(employees.get(j + 1)
+                                    .getName()) > 0) {
+                        shouldSwap = true;
+                    } else if ("desc".equalsIgnoreCase(sortOrder) && employees.get(j)
+                            .getName()
+                            .compareTo(employees.get(j + 1).getName()) < 0) {
+                        shouldSwap = true;
+                    }
+                } else if ("salary".equalsIgnoreCase(sortField)) {
+                    if ("asc".equalsIgnoreCase(sortOrder) && employees.get(j).getSalary() > employees.get(j + 1).getSalary()) {
+                        shouldSwap = true;
+                    } else if ("desc".equalsIgnoreCase(sortOrder) && employees.get(j).getSalary() < employees.get(j + 1).getSalary()) {
+                        shouldSwap = true;
+                    }
+                } else {
+                    throw new IllegalArgumentException("Invalid sort field: " + sortField);
+                }
+
+                if (shouldSwap) {
+                    Employee temp = employees.get(j);
+                    employees.set(j, employees.get(j + 1));
+                    employees.set(j + 1, temp);
+                }
+            }
+        }
+    }
+
     @Override
     public void sortEmployees(String sortField, String sortOrder) {
-        Comparator<Employee> comparator;
-
-        if ("name".equalsIgnoreCase(sortField)) {
-            comparator = Comparator.comparing(Employee::getName);
-        } else if ("salary".equalsIgnoreCase(sortField)) {
-            comparator = Comparator.comparing(Employee::getSalary);
-        } else {
-            throw new IllegalArgumentException("Invalid sort field: " + sortField);
-        }
-
-        if ("desc".equalsIgnoreCase(sortOrder)) {
-            employees.sort(comparator.reversed());
-        } else if (!"asc".equalsIgnoreCase(sortOrder)) {
-            throw new IllegalArgumentException("Invalid sort order: " + sortOrder);
-        }
-
-        employees = employees.stream()
-                .sorted(comparator.reversed())
-                .collect(Collectors.toList());
+        sortEmployeesManually(employees, sortField, sortOrder);
     }
 
     @Override
     public void printData(String output, String filePath) {
-        List<String> lines = getFormatedData();
+        List<String> lines = formatData();
 
         if ("file".equalsIgnoreCase(output) && filePath != null) {
             FileUtil.writeFile(filePath, lines);
@@ -75,7 +98,7 @@ public class PersonService implements PersonServiceInterface {
         }
     }
 
-    private List<String> getFormatedData() {
+    private List<String> formatData() {
         List<String> data = new ArrayList<>();
         Map<String, List<Employee>> departments = new TreeMap<>();
 
@@ -94,31 +117,36 @@ public class PersonService implements PersonServiceInterface {
 
         for (Map.Entry<String, List<Employee>> entry : departments.entrySet()) {
             String departmentName = entry.getKey();
+            List<Double> salaries = new ArrayList<>();
             List<Employee> departmentEmployee = entry.getValue();
 
             data.add(departmentName);
             Manager departmentManager = findManagerByDepartment(departmentName);
             if (departmentManager != null) {
                 data.add(departmentManager.toString());
+                salaries.add(departmentManager.getSalary());
             }
 
             for (Employee employee : departmentEmployee) {
                 data.add(employee.toString());
+                salaries.add(employee.getSalary());
             }
 
-            double avgSalary = departmentEmployee.stream()
-                    .mapToDouble(Employee::getSalary)
-                    .average()
-                    .orElse(0.0);
+            double avgSalary = 0.0;
 
-            data.add(departmentEmployee.size() + "," + String.format("%.2f", avgSalary));
+            for (Double salary : salaries) {
+                avgSalary += salary;
+            }
+
+            avgSalary /= salaries.size();
+
+            data.add((departmentEmployee.size() + 1) + ", " + String.format(Locale.US, "%.1f", avgSalary));
         }
 
         if (!invalidData.isEmpty()) {
             data.add("Некорректные данные");
             data.addAll(invalidData);
         }
-
         return data;
     }
 

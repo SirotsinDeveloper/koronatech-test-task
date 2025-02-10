@@ -1,12 +1,12 @@
 package by.slava.test.koronashift.task.model;
 
-import by.slava.test.koronashift.task.model.person.Person;
+import by.slava.test.koronashift.task.model.person.Worker;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
-public class Employee extends Person{
+public class Employee extends Worker {
     private int managerId;
 
     public Employee(String position, int id, String name, double salary, int managerId) {
@@ -14,8 +14,4 @@ public class Employee extends Person{
         this.managerId = managerId;
     }
 
-    @Override
-    public String toString() {
-        return super.toString() + "," + managerId;
-    }
 }

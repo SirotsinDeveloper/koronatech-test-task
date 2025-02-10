@@ -7,7 +7,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @AllArgsConstructor
-public abstract class Person {
+public abstract class Worker {
     protected String position;
     protected int id;
     protected String name;

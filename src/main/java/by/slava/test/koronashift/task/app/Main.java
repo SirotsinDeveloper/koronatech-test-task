@@ -83,14 +83,14 @@ public class Main {
             return;
         }
 
-        PersonService dataProcessor = new PersonService();
+        PersonService personService = new PersonService();
         List<String> lines = FileUtil.readFile(filePath);
-        dataProcessor.processData(lines);
+        personService.processData(lines);
 
         if (sortField != null) {
-            dataProcessor.sortEmployees(sortField, sortOrder);
+            personService.sortEmployees(sortField, sortOrder);
         }
 
-        dataProcessor.printData(output, outputPath);
+        personService.printData(output, outputPath);
     }
 }
